@@ -16,7 +16,6 @@
 
 #![deny(missing_docs)]
 
-
 use sentin8_middleware::http_client::Sentin8HttpClient;
 use sentin8_storage_contracts::ListObjectsResponse;
 use thiserror::Error;
@@ -62,8 +61,7 @@ impl StorageClient {
         cert_path: &str,
         key_path: &str,
     ) -> Result<Self, StorageError> {
-        let mtls =
-            sentin8_middleware::mtls::MtlsConfig::new(ca_cert_path, cert_path, key_path);
+        let mtls = sentin8_middleware::mtls::MtlsConfig::new(ca_cert_path, cert_path, key_path);
         let http = sentin8_middleware::mtls::build_mtls_client(&mtls)
             .map(Sentin8HttpClient::from_client)
             .map_err(|e| StorageError::Http(e.to_string()))?;

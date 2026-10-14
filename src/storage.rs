@@ -117,7 +117,6 @@ impl SignedUrlCodec {
     }
 }
 
-
 /// The storage adapter trait. All methods are async.
 #[async_trait::async_trait]
 pub trait StorageAdapter: Send + Sync {

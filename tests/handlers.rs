@@ -380,6 +380,9 @@ async fn spawn_app() -> Option<(axum::Router, TestIssuer, tempfile::TempDir, Str
         signed_codec: Arc::new(SignedUrlCodec::new(b"test-signing-key")),
         policy: engine,
         admin: sentin8::shield::admin::SharedAdminState::test("sentin8:storage", pool.clone()),
+        workload_registry: sentin8::auth::workload_registry::WorkloadMap::boot_load_empty(
+            "sentin8:storage",
+        ),
     };
     let router = routes(axum::Router::new()).with_state(state);
     Some((router, issuer, tmp, env_id))

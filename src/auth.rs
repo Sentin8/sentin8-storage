@@ -32,9 +32,8 @@ pub async fn verify(
     state: &crate::handlers::AppState,
     headers: &HeaderMap,
 ) -> Result<AuthContext, (StatusCode, String)> {
-    let has_bearer = headers
-        .contains_key(http::header::AUTHORIZATION)
-        || headers.contains_key("authorization");
+    let has_bearer =
+        headers.contains_key(http::header::AUTHORIZATION) || headers.contains_key("authorization");
     if !has_bearer {
         if let Some(workload) =
             sentin8::auth::client::resolve_workload_identity(&state.workload_registry, headers)
