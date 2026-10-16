@@ -4,7 +4,11 @@
     {
       "service_type": "sentin8:storage",
       "subdomain": "storage",
-      "binary": "sentin8-storage"
+      "binary": "sentin8-storage",
+      "telemetry_property": {
+        "slug": "storage",
+        "name": "Sentin8:Storage Platform Telemetry"
+      }
     }
   ]
 }
