@@ -1,0 +1,381 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "sentin8-storage",
+    "description": "Sentin8 Sentin8:Storage — object/file storage with pluggable adapters.",
+    "license": {
+      "name": "MIT OR Apache-2.0",
+      "identifier": "MIT OR Apache-2.0"
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/storage/objects": {
+      "get": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "`GET /v1/storage/objects` — list objects with optional prefix.\nList objects.",
+        "operationId": "object.list",
+        "parameters": [
+          {
+            "name": "prefix",
+            "in": "query",
+            "description": "Prefix filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of objects"
+          }
+        },
+        "security": [
+          {
+            "sentin8:storage:env:read": []
+          }
+        ]
+      }
+    },
+    "/v1/storage/objects/{object_path}": {
+      "get": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "`GET /v1/storage/objects/{path}` — download an object.\nFetch object.",
+        "operationId": "object.download",
+        "parameters": [
+          {
+            "name": "object_path",
+            "in": "path",
+            "description": "Object path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Object content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing storage scope"
+          },
+          "404": {
+            "description": "Object not found"
+          }
+        },
+        "security": [
+          {
+            "sentin8:storage:env:read": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "`PUT /v1/storage/objects/{path}` — upload an object.\nHandle PUT object.",
+        "operationId": "object.upload",
+        "parameters": [
+          {
+            "name": "object_path",
+            "in": "path",
+            "description": "Object path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Object uploaded"
+          },
+          "403": {
+            "description": "Missing storage scope"
+          }
+        },
+        "security": [
+          {
+            "sentin8:storage:env:write": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "`POST /v1/storage/objects/{*path}` — dispatch sign-read, sign-upload, copy, move.\nHandle object action.",
+        "operationId": "object.action",
+        "parameters": [
+          {
+            "name": "object_path",
+            "in": "path",
+            "description": "Object path or action (copy/move/sign-read/sign-upload)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Action completed"
+          },
+          "403": {
+            "description": "Missing storage scope"
+          },
+          "405": {
+            "description": "POST not supported on this path"
+          }
+        },
+        "security": [
+          {
+            "sentin8:storage:env:read": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "`DELETE /v1/storage/objects/{path}` — delete an object.\nDelete object.",
+        "operationId": "object.delete",
+        "parameters": [
+          {
+            "name": "object_path",
+            "in": "path",
+            "description": "Object path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Object deleted"
+          },
+          "403": {
+            "description": "Missing storage scope"
+          },
+          "404": {
+            "description": "Object not found"
+          }
+        },
+        "security": [
+          {
+            "sentin8:storage:env:admin": []
+          }
+        ]
+      },
+      "head": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "`HEAD /v1/storage/objects/{path}` — existence + size probe without\nreading the payload (the dedup fast path every\ncontent-addressed vertical uses before writing).\nHandle head object.",
+        "operationId": "object.head",
+        "parameters": [
+          {
+            "name": "object_path",
+            "in": "path",
+            "description": "Object path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Object exists — Content-Length set"
+          },
+          "403": {
+            "description": "Missing storage scope"
+          },
+          "404": {
+            "description": "Object not found"
+          }
+        },
+        "security": [
+          {
+            "sentin8:storage:env:read": []
+          }
+        ]
+      }
+    },
+    "/v1/storage/signed/{token}": {
+      "get": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "`GET /v1/storage/signed/{token}` — serve object via signed URL.\nServe signed.",
+        "operationId": "signed.serve",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Signed URL token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Object content",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token"
+          },
+          "403": {
+            "description": "Signed URL expired or forged"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "storage"
+        ],
+        "summary": "`PUT /v1/storage/signed/{token}` — store object via signed upload URL.\nHandle upload signed.",
+        "operationId": "signed.upload",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Signed URL token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Object stored",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int32",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid token"
+          },
+          "403": {
+            "description": "Signed URL expired or forged"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CopyMoveRequest": {
+        "type": "object",
+        "description": "Request body for copy/move operations.\nRequest body for copymove.",
+        "required": [
+          "src_path",
+          "dst_path"
+        ],
+        "properties": {
+          "dst_path": {
+            "type": "string",
+            "description": "The dst path."
+          },
+          "src_path": {
+            "type": "string",
+            "description": "The src path."
+          }
+        }
+      },
+      "ListParams": {
+        "type": "object",
+        "description": "The listparams type.",
+        "properties": {
+          "prefix": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The prefix."
+          }
+        }
+      }
+    }
+  },
+  "security": [],
+  "tags": [
+    {
+      "name": "storage",
+      "description": "Sentin8:Storage admin API — object CRUD, signed URLs"
+    }
+  ]
+}
