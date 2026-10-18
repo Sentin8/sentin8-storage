@@ -51,6 +51,15 @@ pub struct AppState {
 }
 
 /// Handle health.
+#[utoipa::path(
+    get,
+    path = "/v1/health",
+    responses(
+        (status = 200, description = "Liveness (version, build, disk usage)", body = serde_json::Value),
+    ),
+    security(),
+    tag = "meta",
+)]
 pub async fn health() -> axum::Json<serde_json::Value> {
     let mut payload = serde_json::json!({"status": "ok", "version": sentin8::build_info::id(), "build": sentin8::build_info::build_hash()});
     if let Some(n) = sentin8::middleware::traffic_counter::process_active_connections() {
@@ -690,6 +699,18 @@ pub async fn upload_signed(
 /// `GET /v1/public/objects/{*path}` — platform-scoped public read for image assets.
 /// No auth required. Only serves image extensions. Uses system env storage prefix.
 /// Handle public read.
+#[utoipa::path(
+    get,
+    path = "/v1/public/objects/{object_path}",
+    params(("object_path" = String, Path, description = "Object key (image assets only)")),
+    responses(
+        (status = 200, description = "The raw image bytes (Content-Type by extension)"),
+        (status = 403, description = "Non-image extension"),
+        (status = 404, description = "No such object"),
+    ),
+    security(),
+    tag = "storage",
+)]
 pub async fn public_read(
     State(state): State<AppState>,
     Path(object_path): Path<String>,
@@ -711,6 +732,21 @@ pub async fn public_read(
 /// `GET /v1/public/env/{env_id}/objects/{*path}` — env-scoped public read.
 /// No auth required. Only serves image extensions.
 /// Handle public read env.
+#[utoipa::path(
+    get,
+    path = "/v1/public/env/{env_id}/objects/{object_path}",
+    params(
+        ("env_id" = String, Path, description = "Environment id"),
+        ("object_path" = String, Path, description = "Object key (image assets only)")
+    ),
+    responses(
+        (status = 200, description = "The raw image bytes (Content-Type by extension)"),
+        (status = 403, description = "Non-image extension"),
+        (status = 404, description = "No such object"),
+    ),
+    security(),
+    tag = "storage",
+)]
 pub async fn public_read_env(
     State(state): State<AppState>,
     Path((env_id, object_path)): Path<(String, String)>,

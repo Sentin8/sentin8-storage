@@ -16,6 +16,21 @@ use crate::handlers;
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        sentin8::shell::policy_check_relation,
+        sentin8::shell::policy_delete_attribute,
+        sentin8::shell::policy_delete_relation,
+        sentin8::shell::policy_delete_set,
+        sentin8::shell::policy_get_set,
+        sentin8::shell::policy_list_attributes,
+        sentin8::shell::policy_list_relations,
+        sentin8::shell::policy_list_sets,
+        sentin8::shell::policy_mode_disable,
+        sentin8::shell::policy_mode_enforce,
+        sentin8::shell::policy_mode_shadow,
+        sentin8::shell::policy_put_attribute,
+        sentin8::shell::policy_put_relation,
+        sentin8::shell::policy_put_set,
+        sentin8::shell::policy_test_set,
         handlers::put_object,
         handlers::head_object,
         handlers::get_object,
@@ -24,6 +39,19 @@ use crate::handlers;
         handlers::object_action,
         handlers::serve_signed,
         handlers::upload_signed,
+        handlers::public_read,
+        handlers::public_read_env,
+        handlers::health,
+        crate::admin_ui::list_buckets,
+        crate::admin_ui::list_bucket_objects,
+        crate::admin_ui::upload_file,
+        crate::admin_ui::create_bucket,
+        crate::admin_ui::delete_bucket,
+        crate::admin_ui::delete_object,
+        crate::admin_ui::download_object,
+        crate::admin_ui::generate_link,
+        crate::admin_ui::get_admin_ui,
+        crate::admin_ui::get_admin_data,
     ),
     components(schemas(
         handlers::ListParams,
@@ -31,7 +59,7 @@ use crate::handlers;
     )),
     security(),
     tags(
+        (name = "policy", description = "Shield policy administration (shared surface)"),
         (name = "storage", description = "Sentin8:Storage admin API — object CRUD, signed URLs"),
     ),
-)]
-pub struct StorageOpenApi;
+)]pub struct StorageOpenApi;

@@ -66,7 +66,7 @@ async fn storage_key(
 
 /// Resolve the effective env_id for storage operations.
 /// Priority: target_env_id query param (BFF proxy) > x-sentin8-env-id header (TLS) > token env_id.
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::IntoParams, utoipa::ToSchema)]
 /// The targetenvquery type.
 pub struct TargetEnvQuery {
     #[serde(default)]
@@ -112,6 +112,21 @@ fn resolve_env_id(
 }
 
 /// Fetch admin ui.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/ui/{page}",
+    params(
+        ("page" = String, Path, description = "RFW page name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "RFW page definition (rendered by Sentin8:Dash)", body = serde_json::Value),
+        (status = 403, description = "Caller lacks a storage read/admin scope"),
+        (status = 404, description = "Unknown page"),
+    ),
+    security(("sentin8:storage:read" = [])),
+    tag = "admin-ui",
+)]
 pub async fn get_admin_ui(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -259,7 +274,21 @@ pub async fn get_admin_ui(
 }
 
 /// `GET /v1/admin/{resource}` — returns a JSON array of admin data rows.
-/// Fetch admin data.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/{resource}",
+    params(
+        ("resource" = String, Path, description = "Admin data resource"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "The resource's rows for the RFW table", body = serde_json::Value),
+        (status = 403, description = "Caller lacks a storage read/admin scope"),
+        (status = 404, description = "Unknown resource"),
+    ),
+    security(("sentin8:storage:read" = [])),
+    tag = "admin-ui",
+)]
 pub async fn get_admin_data(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -334,6 +363,16 @@ pub async fn get_admin_data(
 /// has a POST handler, so the catch-all `/v1/admin/{resource}` route is
 /// shadowed for GET requests.
 /// List buckets.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/buckets",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    responses(
+        (status = 200, description = "Bucket names + object counts", body = serde_json::Value),
+    ),
+    security(("sentin8:storage:read" = [])),
+    tag = "admin-ui",
+)]
 pub async fn list_buckets(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -380,6 +419,20 @@ pub struct BucketObjectsQuery {
 
 /// `GET /v1/admin/buckets/objects?bucket=name` — list objects in a bucket.
 /// List bucket objects.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/buckets/objects",
+    params(
+        ("bucket" = String, Query, description = "Bucket name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "Objects in the bucket", body = serde_json::Value),
+        (status = 404, description = "Unknown bucket"),
+    ),
+    security(("sentin8:storage:read" = [])),
+    tag = "admin-ui",
+)]
 pub async fn list_bucket_objects(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -426,6 +479,18 @@ pub struct UploadFileRequest {
 
 /// `POST /v1/admin/buckets/upload` — upload a file to a bucket.
 /// Handle upload file.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/buckets/upload",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "File stored (multipart or JSON body per the RFW form)", body = serde_json::Value),
+    ),
+    security(("sentin8:storage:write" = [])),
+    tag = "admin-ui",
+)]
+
 pub async fn upload_file(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -480,6 +545,18 @@ pub struct CreateBucketRequest {
 /// `POST /v1/admin/buckets` — create a bucket by placing a `.keep` marker
 /// object at the bucket path. Returns an RFW redirect to the buckets list.
 /// Create bucket.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/buckets",
+    params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Bucket created (.keep marker written)", body = serde_json::Value),
+    ),
+    security(("sentin8:storage:write" = [])),
+    tag = "admin-ui",
+)]
+
 pub async fn create_bucket(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -535,6 +612,21 @@ pub struct DeleteBucketRequest {
 
 /// `POST /v1/admin/buckets/{id}/delete` — delete a bucket and all its objects.
 /// Delete bucket.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/buckets/{id}/delete",
+    params(
+        ("id" = String, Path, description = "Bucket name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "Bucket deleted with all objects", body = serde_json::Value),
+        (status = 404, description = "Unknown bucket"),
+    ),
+    security(("sentin8:storage:write" = [])),
+    tag = "admin-ui",
+)]
+
 pub async fn delete_bucket(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -567,6 +659,22 @@ pub struct DeleteObjectRequest {
 
 /// `POST /v1/admin/buckets/{id}/objects/{object}/delete` — delete a single object.
 /// Delete object.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/buckets/{id}/objects/{object}/delete",
+    params(
+        ("id" = String, Path, description = "Bucket name"),
+        ("object" = String, Path, description = "Object key"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "Object deleted", body = serde_json::Value),
+        (status = 404, description = "Unknown bucket or object"),
+    ),
+    security(("sentin8:storage:write" = [])),
+    tag = "admin-ui",
+)]
+
 pub async fn delete_object(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -596,6 +704,22 @@ pub async fn delete_object(
 /// `GET /v1/admin/buckets/{id}/download?object={name}` — download an object.
 /// Returns the raw bytes as a binary stream.
 /// Handle download object.
+#[utoipa::path(
+    get,
+    path = "/v1/admin/buckets/{id}/download",
+    params(
+        ("id" = String, Path, description = "Bucket name"),
+        ("object" = String, Query, description = "Object key"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    responses(
+        (status = 200, description = "The raw object bytes"),
+        (status = 404, description = "Unknown bucket or object"),
+    ),
+    security(("sentin8:storage:read" = [])),
+    tag = "admin-ui",
+)]
+
 pub async fn download_object(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -639,6 +763,22 @@ pub struct GenerateLinkRequest {
 
 /// `POST /v1/admin/buckets/{id}/link` — generate a signed read URL for an object.
 /// Generate link.
+#[utoipa::path(
+    post,
+    path = "/v1/admin/buckets/{id}/link",
+    params(
+        ("id" = String, Path, description = "Bucket name"),
+        ("target_env_id" = String, Query, description = "Target env (RLS context)")
+    ),
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Signed read URL for the object", body = serde_json::Value),
+        (status = 404, description = "Unknown bucket or object"),
+    ),
+    security(("sentin8:storage:write" = [])),
+    tag = "admin-ui",
+)]
+
 pub async fn generate_link(
     State(state): State<AppState>,
     headers: HeaderMap,
