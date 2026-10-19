@@ -3,9 +3,9 @@
 -- SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Storage
 -- SPDX-License-Identifier: Apache-2.0
 
--- Sentin8:Storage — object storage service.
+-- Sentin8:Storage - object storage service.
 -- Sentin8:Storage stores WASM binaries (Sentin8:Func), statements (Bank8:Ledger), and other large
--- binary payloads. It does not currently own any PostgreSQL tables — all
+-- binary payloads. It does not currently own any PostgreSQL tables - all
 -- object metadata lives in the owning service's tables (e.g. sentin8_func_modules,
 -- bank8_ledger_statements) and the binary content is referenced by sentin8_storage_path /
 -- storage object key.
@@ -93,7 +93,7 @@ CREATE POLICY audit_journal_dml ON storage.audit_journal
     WITH CHECK (sentin8_context_initialized() AND env_id = sentin8_current_env_id());
 
 
--- ── Schema grants (service-owned — the 2026-10-03 ownership pass) ─────
+-- ── Schema grants (service-owned - the 2026-10-03 ownership pass) ─────
 -- This service's own schema: USAGE for its role (platform.sql no longer
 -- seeds per-service USAGE; the service declares it here).
 GRANT USAGE ON SCHEMA storage TO sentin8_storage_service;

@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Storage
 // SPDX-License-Identifier: Apache-2.0
 
-//! Sentin8:Storage Admin UI handlers — RFW definitions.
+//! Sentin8:Storage Admin UI handlers - RFW definitions.
 //! Served from `GET /v1/admin/ui/{page}`, rendered by Sentin8:Dash at runtime.
 
 use crate::handlers::AppState;
@@ -19,7 +19,7 @@ use serde::Deserialize;
 
 use axum::http::StatusCode;
 
-/// Compute the storage base prefix for the given env scope — the SAME
+/// Compute the storage base prefix for the given env scope - the SAME
 /// physical layout the object API uses (`org/{org_id}/env/{env_id}/`);
 /// org_id is resolved internally from env_id, never from URLs.
 async fn storage_base(pool: &sqlx::PgPool, env_id: &str) -> Result<String, (StatusCode, String)> {
@@ -73,7 +73,7 @@ pub struct TargetEnvQuery {
     target_env_id: Option<String>,
 }
 
-/// Resolve the effective env and authorize it ( — cross-env access is
+/// Resolve the effective env and authorize it ( - cross-env access is
 /// validated at the authorization layer): if the resolved env differs from
 /// the token env, the caller must be a platform admin (`sentin8:sys:admin`) or hold
 /// an env-admin scope for the target env. Otherwise 403.
@@ -142,7 +142,7 @@ pub async fn get_admin_ui(
         "sentin8:sys:env:admin",
     ])?;
     // Authorization still resolves+validates the effective env (
-    // cross-env rule); the RFW definitions themselves are tenant-agnostic —
+    // cross-env rule); the RFW definitions themselves are tenant-agnostic -
     // business params only, the Dash client supplies target_env_id.
     let _ = resolve_env_id(&headers, &q, &a)?;
     let def = match page.as_str() {
@@ -191,13 +191,13 @@ pub async fn get_admin_ui(
             } else {
                 page.strip_prefix("buckets/").unwrap_or("")
             };
- // RFW data endpoints carry ONLY business params — the Dash
+ // RFW data endpoints carry ONLY business params - the Dash
  // ApiClient appends target_env_id to every proxied request
  // (apps/dash/lib/services.dart _buildUrl); embedding it here
  // too duplicates the param and serde rejects the query with
  // 400.
             let data_endpoint = format!("/buckets/objects?bucket={bucket_name}");
- // Upload form — shown inline on the bucket detail page AND on the
+ // Upload form - shown inline on the bucket detail page AND on the
  // dedicated upload page. On the bucket detail page, it appears
  // above the objects table.
             let upload_form = RemoteWidget::Form(WidgetForm {
@@ -235,12 +235,12 @@ pub async fn get_admin_ui(
                 method: FormMethod::Post,
             });
             if is_upload_page {
- // Dedicated upload page — just the form.
+ // Dedicated upload page - just the form.
                 AdminPage::new(format!("Upload to: {bucket_name}"))
                     .widget(upload_form)
                     .build()
             } else {
- // Bucket detail page — upload form inline + objects table.
+ // Bucket detail page - upload form inline + objects table.
                 AdminPage::new(format!("Bucket: {bucket_name}"))
                     .widgets(vec![
                         upload_form,
@@ -260,7 +260,7 @@ pub async fn get_admin_ui(
         "settings" => AdminPage::new("Storage Settings")
             .widget(card("Adapter Configuration","S3-compatible adapter settings (endpoint, region, bucket prefix). Configured via environment variables on the Storage service."))
             .build(),
- // ── Policy Studio — shared page
+ // ── Policy Studio - shared page
  // constructors; the guard guarantees `Some` ( dispatch).
         p if sentin8::rfw::policy_page("sentin8:storage", p).is_some() => sentin8::rfw
             ::policy_page("sentin8:storage", p)
@@ -273,7 +273,7 @@ pub async fn get_admin_ui(
     ))
 }
 
-/// `GET /v1/admin/{resource}` — returns a JSON array of admin data rows.
+/// `GET /v1/admin/{resource}` - returns a JSON array of admin data rows.
 #[utoipa::path(
     get,
     path = "/v1/admin/{resource}",
@@ -306,7 +306,7 @@ pub async fn get_admin_data(
     let env_id = resolve_env_id(&headers, &q, &a)?;
     let rows: Vec<serde_json::Value> = match resource.as_str() {
         "buckets" => {
-            // List top-level "buckets" — these are top-level prefixes under
+            // List top-level "buckets" - these are top-level prefixes under
             // the storage base path (env-scoped).
             let base = storage_base(&state.pool, &env_id).await?;
             let objects = state.adapter.list(&base).await.unwrap_or_default();
@@ -327,14 +327,14 @@ pub async fn get_admin_data(
                         "id": name,
                         "name": name,
                         "objects": count,
-                        "size": "—",
-                        "created_at": "—",
+                        "size": "-",
+                        "created_at": "-",
                     })
                 })
                 .collect()
         }
         "buckets/objects" => {
-            // List objects in a bucket — bucket name from query param.
+            // List objects in a bucket - bucket name from query param.
             // The RFW data_endpoint includes ?bucket={id}&target_env_id=...
             // But the admin data endpoint only gets the resource path.
             // We list all objects under the storage base scope.
@@ -347,8 +347,8 @@ pub async fn get_admin_data(
                     serde_json::json!({
                         "id": name,
                         "name": name,
-                        "size": "—",
-                        "modified": "—",
+                        "size": "-",
+                        "modified": "-",
                     })
                 })
                 .collect()
@@ -358,7 +358,7 @@ pub async fn get_admin_data(
     Ok(Json(serde_json::Value::Array(rows)))
 }
 
-/// `GET /v1/admin/buckets` — list buckets (top-level prefixes).
+/// `GET /v1/admin/buckets` - list buckets (top-level prefixes).
 /// This is a dedicated handler because the route `/v1/admin/buckets` also
 /// has a POST handler, so the catch-all `/v1/admin/{resource}` route is
 /// shadowed for GET requests.
@@ -402,8 +402,8 @@ pub async fn list_buckets(
                 "id": name,
                 "name": name,
                 "objects": count,
-                "size": "—",
-                "created_at": "—",
+                "size": "-",
+                "created_at": "-",
             })
         })
         .collect();
@@ -417,7 +417,7 @@ pub struct BucketObjectsQuery {
     pub bucket: String,
 }
 
-/// `GET /v1/admin/buckets/objects?bucket=name` — list objects in a bucket.
+/// `GET /v1/admin/buckets/objects?bucket=name` - list objects in a bucket.
 /// List bucket objects.
 #[utoipa::path(
     get,
@@ -458,8 +458,8 @@ pub async fn list_bucket_objects(
             serde_json::json!({
                 "id": name,
                 "name": name,
-                "size": "—",
-                "modified": "—",
+                "size": "-",
+                "modified": "-",
             })
         })
         .collect();
@@ -477,7 +477,7 @@ pub struct UploadFileRequest {
     pub content_base64: String,
 }
 
-/// `POST /v1/admin/buckets/upload` — upload a file to a bucket.
+/// `POST /v1/admin/buckets/upload` - upload a file to a bucket.
 /// Handle upload file.
 #[utoipa::path(
     post,
@@ -542,7 +542,7 @@ pub struct CreateBucketRequest {
     pub name: String,
 }
 
-/// `POST /v1/admin/buckets` — create a bucket by placing a `.keep` marker
+/// `POST /v1/admin/buckets` - create a bucket by placing a `.keep` marker
 /// object at the bucket path. Returns an RFW redirect to the buckets list.
 /// Create bucket.
 #[utoipa::path(
@@ -572,7 +572,7 @@ pub async fn create_bucket(
     ])?;
     let env_id = resolve_env_id(&headers, &q, &a)?;
 
-    // Sanitize bucket name — only allow alphanumeric, dash, underscore.
+    // Sanitize bucket name - only allow alphanumeric, dash, underscore.
     let name = req.name.trim();
     if name.is_empty()
         || !name
@@ -610,7 +610,7 @@ pub struct DeleteBucketRequest {
     pub id: String,
 }
 
-/// `POST /v1/admin/buckets/{id}/delete` — delete a bucket and all its objects.
+/// `POST /v1/admin/buckets/{id}/delete` - delete a bucket and all its objects.
 /// Delete bucket.
 #[utoipa::path(
     post,
@@ -657,7 +657,7 @@ pub struct DeleteObjectRequest {
     pub object: String,
 }
 
-/// `POST /v1/admin/buckets/{id}/objects/{object}/delete` — delete a single object.
+/// `POST /v1/admin/buckets/{id}/objects/{object}/delete` - delete a single object.
 /// Delete object.
 #[utoipa::path(
     post,
@@ -701,7 +701,7 @@ pub async fn delete_object(
     ))))
 }
 
-/// `GET /v1/admin/buckets/{id}/download?object={name}` — download an object.
+/// `GET /v1/admin/buckets/{id}/download?object={name}` - download an object.
 /// Returns the raw bytes as a binary stream.
 /// Handle download object.
 #[utoipa::path(
@@ -761,7 +761,7 @@ pub struct GenerateLinkRequest {
     pub object: String,
 }
 
-/// `POST /v1/admin/buckets/{id}/link` — generate a signed read URL for an object.
+/// `POST /v1/admin/buckets/{id}/link` - generate a signed read URL for an object.
 /// Generate link.
 #[utoipa::path(
     post,

@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Storage
 // SPDX-License-Identifier: Apache-2.0
 
-//! Sentin8 Storage — object/file storage with pluggable adapters.
+//! Sentin8 Storage - object/file storage with pluggable adapters.
 //!
 //! See.
 //!

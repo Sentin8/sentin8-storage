@@ -3,7 +3,7 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the Sentin8:Storage
 // SPDX-License-Identifier: Apache-2.0
 
-// Integration tests for Buck — Story 1.4.17
+// Integration tests for Buck - Story 1.4.17
 //
 // Tests upload, download, signed URLs, and cross-tenant isolation
 // (path traversal prevention). Uses the local filesystem adapter

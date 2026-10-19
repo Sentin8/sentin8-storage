@@ -14,13 +14,13 @@ use crate::config::StorageConfig;
 
 pub use sentin8::auth::client::AuthContext;
 
-/// Verify the request identity — Bearer-first, certificate fallback
+/// Verify the request identity - Bearer-first, certificate fallback
 /// (DESIGN §5).
 ///
 /// A Bearer JWT (user/delegated) is verified against the shared JWKS
 /// client. When NO Authorization header is present, the TLS-injected
 /// client-certificate workload identity resolves against the
-/// boot-loaded registry map (auth DESIGN §4.3f — the certificate IS the
+/// boot-loaded registry map (auth DESIGN §4.3f - the certificate IS the
 /// authentication, the map IS the authorization record): the
 /// `func-storage` edge (func's WASM-binary PUT) presents its certificate
 /// over the mTLS transport and carries no bearer.
@@ -56,7 +56,7 @@ pub async fn verify_token(
 
 /// Extract the raw bearer token (compact JWT) from the Authorization
 /// header, without verifying. Used for the bus-inbox publisher columns
-/// (`publisher_id_token`) — the row already went through `verify_token`,
+/// (`publisher_id_token`) - the row already went through `verify_token`,
 /// so this is audit context, not an authorization decision.
 pub fn raw_bearer_token(headers: &HeaderMap) -> Option<String> {
     headers

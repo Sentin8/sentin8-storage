@@ -8,7 +8,7 @@
 //! Rust HTTP client for the Storage object-storage service.
 //!
 //! Route shape: env-scoped objects live at the flat path
-//! `/v1/storage/objects/{path}` — the tenant env is resolved server-side
+//! `/v1/storage/objects/{path}` - the tenant env is resolved server-side
 //! from the bearer token, never from URL path segments. The physical key
 //! layout `org/{org}/env/{env}/…` is server-internal. Org-scoped assets
 //! ride the env route with an org-prefixed object path (there are no
@@ -32,7 +32,7 @@ pub enum StorageError {
 }
 
 #[derive(Clone)]
-/// HTTP client for the Storage object-storage service —
+/// HTTP client for the Storage object-storage service -
 /// **certificate-presenting** (auth DESIGN §4.3f): every
 /// call presents the workload's Acme-issued client certificate in the
 /// TLS handshake; Storage's TLS layer authenticates it and the registry
@@ -47,13 +47,13 @@ pub struct StorageClient {
 impl StorageClient {
     /// Build a certificate-presenting StorageClient. The transport
     /// presents `cert_path`/`key_path` (the workload's Acme-issued
-    /// identity) on every call and trusts only `ca_cert_path` — Storage's
+    /// identity) on every call and trusts only `ca_cert_path` - Storage's
     /// TLS layer CA-verifies the presented certificate and injects the
     /// `X-Sentin8-Client-Cert-*` headers that drive authorization.
     ///
     /// # Errors
     /// [`StorageError::Http`] when the mTLS transport cannot be built
-    /// (missing files / unreadable key) — a missing certificate identity
+    /// (missing files / unreadable key) - a missing certificate identity
     /// is a provisioning state, surfaced loud.
     pub fn with_workload_identity(
         base_url: impl Into<String>,
@@ -71,7 +71,7 @@ impl StorageClient {
         })
     }
 
-    /// Test-only plain-HTTP constructor — talks to a local test server
+    /// Test-only plain-HTTP constructor - talks to a local test server
     /// with no TLS/identity (the wire tests exercise paths and headers,
     /// not authentication; the mTLS transport is covered by the
     /// with_workload_identity build path).
@@ -83,7 +83,7 @@ impl StorageClient {
         }
     }
 
-    /// Plain-HTTP DEV FALLBACK constructor — no TLS identity (Storage
+    /// Plain-HTTP DEV FALLBACK constructor - no TLS identity (Storage
     /// rejects it loudly at the authorization gate). Use ONLY for the
     /// fail-soft boot path when the workload certificate cannot be minted
     /// yet (Acme still coming up): the caller retries its boot identity
@@ -124,7 +124,7 @@ impl StorageClient {
         Ok(())
     }
 
-    /// Existence probe without reading the payload — the dedup fast
+    /// Existence probe without reading the payload - the dedup fast
     /// path. Returns `Ok(None)` when the object does not exist.
     pub async fn head(
         &self,
@@ -154,7 +154,7 @@ impl StorageClient {
         }
     }
 
-    /// Put-if-absent — the idempotent upload for content-addressed
+    /// Put-if-absent - the idempotent upload for content-addressed
     /// objects: skips the payload write when the object already exists.
     /// Returns `Ok(true)` when the bytes were written, `Ok(false)` when
     /// dedup short-circuited.
@@ -299,7 +299,7 @@ impl StorageClient {
             .map_err(|e| StorageError::Decode(e.to_string()))
     }
 
-    /// `GET /v1/health` — health check.
+    /// `GET /v1/health` - health check.
     pub async fn health(&self) -> Result<serde_json::Value, StorageError> {
         let resp = self
             .http
@@ -382,7 +382,7 @@ mod tests {
         .await
         .unwrap();
         let raw = handle.await.unwrap();
-        // Tenant env resolved server-side — path carries no org/env.
+        // Tenant env resolved server-side - path carries no org/env.
         assert!(
             raw.starts_with("PUT /v1/storage/objects/statements/2026-01.pdf HTTP/1.1"),
             "got: {raw}"
@@ -391,7 +391,7 @@ mod tests {
             raw.contains("content-type: application/pdf")
                 || raw.contains("Content-Type: application/pdf")
         );
-        // no Authorization header exists on the platform path —
+        // no Authorization header exists on the platform path -
         // the identity rides the TLS handshake (absent in this plain-HTTP
         // test transport).
         assert!(
@@ -409,7 +409,7 @@ mod tests {
         .await;
         let c = StorageClient::plain(format!("http://{addr}"));
         let out = c.head("o", "e", "missing.pdf").await.unwrap();
-        assert_eq!(out, None, "404 must map to Ok(None) — dedup fast path");
+        assert_eq!(out, None, "404 must map to Ok(None) - dedup fast path");
         let raw = handle.await.unwrap();
         assert!(
             raw.starts_with("HEAD /v1/storage/objects/missing.pdf HTTP/1.1"),

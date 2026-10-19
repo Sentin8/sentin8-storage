@@ -51,7 +51,7 @@ impl SignedMethod {
 ///
 /// Token format: `base64url(payload) || "." || base64url(hmac)` where
 /// `payload = "{key}|{expiry_epoch}|{METHOD}"`. The signature covers the
-/// full payload — the key, the expiry and the method are all tamper-proof.
+/// full payload - the key, the expiry and the method are all tamper-proof.
 /// The signedurlcodec type.
 pub struct SignedUrlCodec {
     key: Vec<u8>,
@@ -129,7 +129,7 @@ pub trait StorageAdapter: Send + Sync {
     /// List object keys under a prefix.
     async fn list(&self, prefix: &str) -> Result<Vec<String>, StorageError>;
     /// Existence probe without reading the payload (the dedup fast
-    /// path — Storage design `HEAD /objects/{path}`).
+    /// path - Storage design `HEAD /objects/{path}`).
     async fn exists(&self, key: &str) -> Result<bool, StorageError> {
         // Default: a 0-byte read attempt; adapters with native HEAD
         // (S3-style) override.
@@ -190,7 +190,7 @@ impl LocalFsAdapter {
             return Err(StorageError::PathTraversal(key.into()));
         }
         // Canonicalize the deepest EXISTING directory and re-append the
-        // non-existent tail, then re-verify containment — this catches
+        // non-existent tail, then re-verify containment - this catches
         // symlink escapes without requiring the target file to exist.
         let (existing, tail) = self.split_existing(&path);
         let canonical_base = existing
@@ -246,7 +246,7 @@ impl StorageAdapter for LocalFsAdapter {
         }
     }
 
-    /// Native HEAD — metadata only, no payload read.
+    /// Native HEAD - metadata only, no payload read.
     async fn exists(&self, key: &str) -> Result<bool, StorageError> {
         let path = self.safe_path(key)?;
         match fs::metadata(&path).await {
@@ -256,7 +256,7 @@ impl StorageAdapter for LocalFsAdapter {
         }
     }
 
-    /// Native size — metadata only, no payload read.
+    /// Native size - metadata only, no payload read.
     async fn size(&self, key: &str) -> Result<u64, StorageError> {
         let path = self.safe_path(key)?;
         match fs::metadata(&path).await {

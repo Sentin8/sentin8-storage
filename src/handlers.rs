@@ -8,7 +8,7 @@
 //! All tenant context is resolved from TLS-injected headers via the auth
 //! token's `env_id` claim (globally unique). `org_id` is resolved internally
 //! from `env_id` via `sys.environments` for the storage key prefix
-//! (`org/{org_id}/env/{env_id}/...`) — it never appears in URL paths.
+//! (`org/{org_id}/env/{env_id}/...`) - it never appears in URL paths.
 
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
@@ -36,14 +36,14 @@ pub struct AppState {
     /// HMAC codec for signed URL tokens.
     /// The signed codec.
     pub signed_codec: Arc<SignedUrlCodec>,
-    /// Shield engine ( — ): additional gate after scope.
+    /// Shield engine ( - ): additional gate after scope.
     /// The policy.
     pub policy: Arc<crate::policy::Engine>,
-    /// Shared Sentin8:Policy admin surface ( — one
+    /// Shared Sentin8:Policy admin surface ( - one
     /// implementation for every service; mounted in server::routes).
     /// The admin.
     pub admin: sentin8::shield::admin::SharedAdminState,
-    /// Boot-loaded platform workload registry map (auth DESIGN §4.3f) —
+    /// Boot-loaded platform workload registry map (auth DESIGN §4.3f) -
     /// the authorization record for certificate-presenting M2M calls
     /// (the `func-storage` WASM upload edge; no bearer exists there).
     /// The workload registry.
@@ -69,13 +69,13 @@ pub async fn health() -> axum::Json<serde_json::Value> {
 }
 
 /// Resolve `org_id` from `env_id` via `sys.environments`. Fails closed:
-/// a DB error or an unknown env is an error — the caller must never fall
+/// a DB error or an unknown env is an error - the caller must never fall
 /// back to a default org ( authorization pipeline: reject, never default).
 /// Schema-qualified: the service role's search_path is `storage, public`
-/// (DBX ) — unqualified cross-schema names fail at runtime.
+/// (DBX ) - unqualified cross-schema names fail at runtime.
 /// Same-connection tenant context : the `sys_environments_select`
 /// RLS policy gates on `sentin8_context_initialized`, so the context is
-/// set on the SAME pooled connection the lookup runs on — a bare-pool
+/// set on the SAME pooled connection the lookup runs on - a bare-pool
 /// SELECT silently returns 0 rows (FORCE RLS) and surfaced as a spurious
 /// 404 "environment not found" instead of a real answer.
 async fn resolve_org_id(
@@ -83,7 +83,7 @@ async fn resolve_org_id(
     env_id: uuid::Uuid,
 ) -> Result<uuid::Uuid, (StatusCode, String)> {
     // The context is transaction-local (`set_config(..., true)`) and sqlx
-    // runs each pooled statement in its OWN implicit transaction — the
+    // runs each pooled statement in its OWN implicit transaction - the
     // context-set and the lookup must share ONE explicit transaction or the
     // context evaporates before the query runs ( rule 2; mirrors BFF
     // `resolve_org_id_from_env_id`).
@@ -118,7 +118,7 @@ fn storage_prefix(org_id: &str, env_id: &str) -> String {
 
 // Step 5 is the ONLY access gate : the three `require_*_scope`
 // helpers used to re-check the JWT scope snapshot (a double gate beside
-// `require_policy`); they are now trivial `Ok()` — the enforced Shield
+// `require_policy`); they are now trivial `Ok()` - the enforced Shield
 // scope-mirror set decides, keyed on the same action ids the call sites
 // evaluate. Kept as functions so call sites and signatures stay stable.
 fn require_read_scope(_auth: &crate::auth::AuthContext) -> Result<(), (StatusCode, String)> {
@@ -135,7 +135,7 @@ fn require_admin_scope(_auth: &crate::auth::AuthContext) -> Result<(), (StatusCo
 
 // ── Object CRUD (env-scoped, env_id from auth context) ─────────────────
 
-/// `PUT /v1/storage/objects/{path}` — upload an object.
+/// `PUT /v1/storage/objects/{path}` - upload an object.
 #[utoipa::path(
     put,
     operation_id = "object.upload",
@@ -174,7 +174,7 @@ pub async fn put_object(
     let content_type = "application/octet-stream".to_string();
     // Idempotent PUT: content-addressed callers
     // (email8 blobs, etc.) may short-circuit when the object already
-    // exists — `If-None-Match: *` or the `X-If-Absent: true` hint
+    // exists - `If-None-Match: *` or the `X-If-Absent: true` hint
     // skip the payload write entirely (dedup fast path). A mismatched
     // existing object is NOT verified byte-for-byte (content-addressed
     // keys make collisions negligible); the caller opted in.
@@ -191,11 +191,11 @@ pub async fn put_object(
     if if_absent {
         match state.adapter.exists(&key).await {
             Ok(true) => {
-                // Already stored — dedup hit; 200 with the marker so
+                // Already stored - dedup hit; 200 with the marker so
                 // content-addressed callers can skip re-uploads. With the
                 // `X-Content-Sha256` header present, verify the stored
                 // object's hash before claiming the dedup (opt-in
-                // hardening — storage DESIGN §5).
+                // hardening - storage DESIGN §5).
                 if let Some(declared) = headers
                     .get("X-Content-Sha256")
                     .and_then(|v| v.to_str().ok())
@@ -240,7 +240,7 @@ pub async fn put_object(
     Ok(StatusCode::OK.into_response())
 }
 
-/// `HEAD /v1/storage/objects/{path}` — existence + size probe without
+/// `HEAD /v1/storage/objects/{path}` - existence + size probe without
 /// reading the payload (the dedup fast path every
 /// content-addressed vertical uses before writing).
 #[utoipa::path(
@@ -249,7 +249,7 @@ pub async fn put_object(
     path = "/v1/storage/objects/{object_path}",
     params(("object_path" = String, Path, description = "Object path")),
     responses(
-        (status = 200, description = "Object exists — Content-Length set"),
+        (status = 200, description = "Object exists - Content-Length set"),
         (status = 404, description = "Object not found"),
         (status = 403, description = "Missing storage scope"),
     ),
@@ -286,7 +286,7 @@ pub async fn head_object(
     }
 }
 
-/// `GET /v1/storage/objects/{path}` — download an object.
+/// `GET /v1/storage/objects/{path}` - download an object.
 #[utoipa::path(
     get,
     operation_id = "object.download",
@@ -333,7 +333,7 @@ pub async fn get_object(
     }
 }
 
-/// `DELETE /v1/storage/objects/{path}` — delete an object.
+/// `DELETE /v1/storage/objects/{path}` - delete an object.
 #[utoipa::path(
     delete,
     operation_id = "object.delete",
@@ -354,7 +354,7 @@ pub async fn delete_object(
     Path(object_path): Path<String>,
 ) -> Result<StatusCode, (StatusCode, String)> {
     let auth = crate::auth::verify(&state, &headers).await?;
-    // Step 5 — Shield decides : delete is the admin action
+    // Step 5 - Shield decides : delete is the admin action
     // .
     crate::policy::require_policy(
         &state.policy,
@@ -387,7 +387,7 @@ pub async fn delete_object(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// `GET /v1/storage/objects` — list objects with optional prefix.
+/// `GET /v1/storage/objects` - list objects with optional prefix.
 #[utoipa::path(
     get,
     operation_id = "object.list",
@@ -434,7 +434,7 @@ pub struct ListParams {
 
 // ── Signed URLs ────────────────────────────────────────────────────────
 
-/// `POST /v1/storage/objects/{*path}` — dispatch sign-read, sign-upload, copy, move.
+/// `POST /v1/storage/objects/{*path}` - dispatch sign-read, sign-upload, copy, move.
 #[utoipa::path(
     post,
     operation_id = "object.action",
@@ -460,7 +460,7 @@ pub async fn object_action(
     let org_id = resolve_org_id(&state.pool, env_id).await?;
     let org_str = org_id.to_string();
     let env_str = env_id.to_string();
-    // Step 5 — Shield decides : copy/move are write actions.
+    // Step 5 - Shield decides : copy/move are write actions.
     crate::policy::require_policy(
         &state.policy,
         &auth,
@@ -610,7 +610,7 @@ async fn move_object_inner(
 }
 
 /// Serve or store an object via an HMAC-signed URL token.
-/// The token authorizes exactly one method — GET for read tokens, PUT for
+/// The token authorizes exactly one method - GET for read tokens, PUT for
 /// upload tokens. Signature, expiry and method are all verified; forged
 /// tokens yield 403, malformed tokens 400, expired tokens 403.
 async fn signed_dispatch(
@@ -650,7 +650,7 @@ async fn signed_dispatch(
     }
 }
 
-/// `GET /v1/storage/signed/{token}` — serve object via signed URL.
+/// `GET /v1/storage/signed/{token}` - serve object via signed URL.
 #[utoipa::path(
     get,
     operation_id = "signed.serve",
@@ -671,7 +671,7 @@ pub async fn serve_signed(
     signed_dispatch(state, token, SignedMethod::Get, None).await
 }
 
-/// `PUT /v1/storage/signed/{token}` — store object via signed upload URL.
+/// `PUT /v1/storage/signed/{token}` - store object via signed upload URL.
 #[utoipa::path(
     put,
     operation_id = "signed.upload",
@@ -696,7 +696,7 @@ pub async fn upload_signed(
 
 // ── Public Read ───────────────────────────────────────────────────────
 
-/// `GET /v1/public/objects/{*path}` — platform-scoped public read for image assets.
+/// `GET /v1/public/objects/{*path}` - platform-scoped public read for image assets.
 /// No auth required. Only serves image extensions. Uses system env storage prefix.
 /// Handle public read.
 #[utoipa::path(
@@ -729,7 +729,7 @@ pub async fn public_read(
     serve_image(&state, &key, &ext).await
 }
 
-/// `GET /v1/public/env/{env_id}/objects/{*path}` — env-scoped public read.
+/// `GET /v1/public/env/{env_id}/objects/{*path}` - env-scoped public read.
 /// No auth required. Only serves image extensions.
 /// Handle public read env.
 #[utoipa::path(

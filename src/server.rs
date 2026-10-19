@@ -19,8 +19,8 @@ pub async fn build_state(
     let config = crate::config::StorageConfig::from_env();
     let adapter: Arc<dyn StorageAdapter> = Arc::new(LocalFsAdapter::new(&config.local_root));
     let signed_codec = Arc::new(crate::storage::SignedUrlCodec::new(&config.signing_key));
-    // ── Sentin8:Policy (— shell-owned boot): consume the
-    // engine the shell booted in step 8 — no second engine, consumer, or
+    // ── Sentin8:Policy (- shell-owned boot): consume the
+    // engine the shell booted in step 8 - no second engine, consumer, or
     // DCR registration here.
     let policy_engine = core.admin.policy.clone();
 
@@ -47,7 +47,7 @@ pub async fn build_state(
         {
             Ok(map) => map,
             Err(e) => {
-                tracing::warn!(error = %e, "storage: workload registry map unavailable at boot — certificate-workload calls fail-closed until next boot");
+                tracing::warn!(error = %e, "storage: workload registry map unavailable at boot - certificate-workload calls fail-closed until next boot");
                 sentin8::auth::workload_registry::WorkloadMap::boot_load_empty("sentin8:storage")
             }
         },
@@ -59,7 +59,7 @@ pub async fn build_state(
 /// Add this service's routes onto the shell-provided router. The shell
 /// owns the boot sequence, state binding, OpenAPI merge and the standard
 /// middleware stack; this adds ONLY routes (including the service's own
-/// `/v1/health` — custom payload).
+/// `/v1/health` - custom payload).
 /// Handle routes.
 pub fn routes(
     router: axum::Router<crate::handlers::AppState>,
@@ -97,7 +97,7 @@ pub fn routes(
             "/v1/admin/buckets/{id}/link",
             post(crate::admin_ui::generate_link),
         )
-        // Environment namespace — env_id is resolved from TLS context
+        // Environment namespace - env_id is resolved from TLS context
         // headers (X-Sentin8-Env-Id), not from URL path params.
         //
         // The object path is matched as a single catch-all segment and
@@ -120,23 +120,23 @@ pub fn routes(
                 .post(handlers::object_action),
         )
         .route("/v1/storage/objects", get(handlers::list_objects))
-        // Signed URL serving — GET for read tokens, PUT for upload tokens.
+        // Signed URL serving - GET for read tokens, PUT for upload tokens.
         .route(
             "/v1/storage/signed/{token}",
             get(handlers::serve_signed).put(handlers::upload_signed),
         )
-        // Public read — env-scoped (env_id from path for public access)
+        // Public read - env-scoped (env_id from path for public access)
         .route(
             "/v1/public/env/{env_id}/objects/{*object_path}",
             get(handlers::public_read_env),
         )
-        // Public read — platform-scoped (system env, e.g. branding logos)
+        // Public read - platform-scoped (system env, e.g. branding logos)
         .route(
             "/v1/public/objects/{*object_path}",
             get(handlers::public_read),
         )
-        // Traffic counter — counts every inbound request (excludes health checks).
-        // ── Sentin8:Policy admin API ( — shared implementation,
+        // Traffic counter - counts every inbound request (excludes health checks).
+        // ── Sentin8:Policy admin API ( - shared implementation,
         // one surface per service; handlers are generic over this AppState).
         .route(
             "/v1/admin/policy-sets",
@@ -182,7 +182,7 @@ pub fn routes(
         )
 }
 
-/// Shared policy-admin surface accessor — the shared
+/// Shared policy-admin surface accessor - the shared
 /// handlers extract this service's admin state via [`HasPolicyAdmin`].
 impl sentin8::shield::admin::HasPolicyAdmin for AppState {
     fn policy_admin(&self) -> &sentin8::shield::admin::SharedAdminState {

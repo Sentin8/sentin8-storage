@@ -24,7 +24,7 @@ pub struct StorageConfig {
     /// Auth issuer for token verification.
     /// The sentin8 auth issuer.
     pub sentin8_auth_issuer: String,
-    /// Shared Auth client — constructed once so the discovery and JWKS
+    /// Shared Auth client - constructed once so the discovery and JWKS
     /// caches are reused across every request (5-minute TTL each).
     /// Cloning is cheap (the caches live behind an `Arc`).
     /// The auth client.
@@ -39,16 +39,16 @@ pub struct StorageConfig {
     /// The stream family.
     pub stream_family: String,
     /// HMAC signing key for signed URL tokens. Random
-    /// per-boot when unset — signed URLs are then only valid within the
+    /// per-boot when unset - signed URLs are then only valid within the
     /// same process lifetime (single-node dev); production sets a stable key.
     /// The signing key.
     pub signing_key: Vec<u8>,
 }
 
-/// System Organization ID — used as fallback when token has no org claim.
+/// System Organization ID - used as fallback when token has no org claim.
 /// The system org id constant.
 pub const SYSTEM_ORG_ID: uuid::Uuid = uuid::Uuid::from_u128(0x00000000_0000_0000_0000_000000000001);
-/// System Environment ID — used as fallback when token has no env claim.
+/// System Environment ID - used as fallback when token has no env claim.
 /// The system env id constant.
 pub const SYSTEM_ENV_ID: uuid::Uuid = uuid::Uuid::from_u128(0x00000000_0000_0000_0000_000000000002);
 
@@ -93,12 +93,12 @@ impl StorageConfig {
                     );
                     if production {
                         panic!(
-                            "SENTIN8_STORAGE_SIGNING_KEY must be set in production — ephemeral keys invalidate signed URLs on restart"
+                            "SENTIN8_STORAGE_SIGNING_KEY must be set in production - ephemeral keys invalidate signed URLs on restart"
                         );
                     }
                     let k: [u8; 32] = rand::random();
                     tracing::info!(
-                        "SENTIN8_STORAGE_SIGNING_KEY not set — generated ephemeral signing key (signed URLs reset on restart)"
+                        "SENTIN8_STORAGE_SIGNING_KEY not set - generated ephemeral signing key (signed URLs reset on restart)"
                     );
                     k.to_vec()
                 }

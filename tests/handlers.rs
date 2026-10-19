@@ -41,7 +41,7 @@ struct TestIssuer {
 }
 
 /// The Sentin8 HTTP stack (rustls + Graviola) requires the PQ provider
-/// installed once per process — same as the storage-client wire tests.
+/// installed once per process - same as the storage-client wire tests.
 fn install_pq_provider() {
     use std::sync::Once;
     static ONCE: Once = Once::new();
@@ -104,7 +104,7 @@ impl TestIssuer {
             }]
         });
 
-        // /oauth/userinfo — the live-identity endpoint the policy engine's
+        // /oauth/userinfo - the live-identity endpoint the policy engine's
         // RoleResolver calls (mirrors production Sentin8:Auth). The test
         // issuer holds no RBAC tables, so it echoes the token's own `scope`
         // claim as the effective scope set (the test mints the scopes it
@@ -118,7 +118,7 @@ impl TestIssuer {
                         .and_then(|v| v.to_str().ok())
                         .and_then(|s| s.strip_prefix("Bearer "))
                         .and_then(|t| {
-                            // Decode the payload segment (no signature check —
+                            // Decode the payload segment (no signature check -
                             // the token was minted by this same test issuer).
                             use base64::Engine as _;
                             let seg = t.split('.').nth(1)?;
@@ -190,12 +190,12 @@ impl TestIssuer {
 
 // ── Test harness ────────────────────────────────────────────────────────
 
-/// An env UUID that does not exist — org resolution must fail closed
+/// An env UUID that does not exist - org resolution must fail closed
 /// (404), never fall back to the system org (SEC-storage-4).
 const ENV_UNKNOWN: &str = "99999999-9999-9999-9999-999999999999";
 
 /// Per-process shared fixture: the test tenant env UUID. Each test run
-/// provisions its own throwaway org + env (repo convention — see
+/// provisions its own throwaway org + env (repo convention - see
 /// `services/app/tests/integration.rs`) so the suite never depends on
 /// externally seeded state surviving a DB reset.
 static TEST_ENV: tokio::sync::OnceCell<String> = tokio::sync::OnceCell::const_new();
@@ -240,7 +240,7 @@ async fn mk_env_id(pool: &sqlx::PgPool) -> String {
         .clone()
 }
 
-/// A token for an unknown env is rejected — object writes under an
+/// A token for an unknown env is rejected - object writes under an
 /// unresolvable tenant must fail closed, not silently land under the
 /// system org's namespace.
 #[tokio::test]
@@ -268,7 +268,7 @@ async fn unknown_env_fails_closed() {
         .unwrap();
     // Step 5 is the FIRST gate after verification: the unknown env resolves
     // no live identity (userinfo lookup for that env fails → empty live
-    // scopes) and the enforced scope-mirror denies. Fail-closed 403 — the
+    // scopes) and the enforced scope-mirror denies. Fail-closed 403 - the
     // request never reaches tenant resolution (404).
     assert_eq!(
         resp.status(),
@@ -299,11 +299,11 @@ async fn unknown_env_fails_closed() {
 
 /// Build the storage router with a tempdir-backed adapter, a test issuer,
 /// and the real pool for org resolution + event emission. Returns `None`
-/// (one skip line per process) only when PostgreSQL is unreachable — the
+/// (one skip line per process) only when PostgreSQL is unreachable - the
 /// `cargo test` default `make test-rust` path without `make infra-up`.
 async fn spawn_app() -> Option<(axum::Router, TestIssuer, tempfile::TempDir, String)> {
     install_pq_provider();
-    // Test binaries don't run the shell boot sequence — load the repo .env
+    // Test binaries don't run the shell boot sequence - load the repo .env
     // (DATABASE_URL) explicitly. Already-loaded vars are not overwritten.
     let _ = dotenvy::dotenv();
     let issuer = TestIssuer::start().await;
@@ -331,28 +331,28 @@ async fn spawn_app() -> Option<(axum::Router, TestIssuer, tempfile::TempDir, Str
     };
 
     // Pool: real DB when reachable (org resolution + events). An empty
-    // DATABASE_URL is treated as unreachable — never a silent skip.
+    // DATABASE_URL is treated as unreachable - never a silent skip.
     if config.database_url.trim().is_empty() {
         eprintln!(
-            "skipping DB-backed storage handler tests — DATABASE_URL not set (run with `make infra-up` first)"
+            "skipping DB-backed storage handler tests - DATABASE_URL not set (run with `make infra-up` first)"
         );
         return None;
     }
     let pool = match sqlx::PgPool::connect(&config.database_url).await {
         Ok(p) => p,
         Err(e) => {
-            eprintln!("skipping DB-backed storage handler tests — PostgreSQL unreachable: {e}");
+            eprintln!("skipping DB-backed storage handler tests - PostgreSQL unreachable: {e}");
             return None;
         }
     };
     // Provision (once per process) the throwaway org+env the tests use.
     let env_id = mk_env_id(&pool).await;
 
-    // Engine seeded with the enforced scope-mirror set for THIS test env —
+    // Engine seeded with the enforced scope-mirror set for THIS test env -
     // mirrors production (enroll seeds the enforced set per env; the
     // fail-closed empty-env deny would otherwise reject every request).
     // §4.2b: the shim engine() is test-only-in-lib; production gets the
-    // engine from the shell boot — tests build it via the same factory.
+    // engine from the shell boot - tests build it via the same factory.
     let engine = sentin8::shield::runtime::engine_for("sentin8:storage");
     seed_storage_scope_mirror(
         &engine,
@@ -371,7 +371,7 @@ async fn spawn_app() -> Option<(axum::Router, TestIssuer, tempfile::TempDir, Str
     )
     .await;
     // Point the live-identity resolver at the test issuer (its userinfo
-    // endpoint echoes the token's scope claim — mirrors production Auth).
+    // endpoint echoes the token's scope claim - mirrors production Auth).
     sentin8::shield::runtime::init_shared_deps(&issuer.base_url, pool.clone());
     let state = AppState {
         config: Arc::new(config),
@@ -388,13 +388,13 @@ async fn spawn_app() -> Option<(axum::Router, TestIssuer, tempfile::TempDir, Str
     Some((router, issuer, tmp, env_id))
 }
 
-/// Seed the enforced scope-mirror set (design §3.4 — the enroll path seeds
+/// Seed the enforced scope-mirror set (design §3.4 - the enroll path seeds
 /// it per env in production; this fixture mirrors that). Permits grant each
 /// storage action to holders of that same scope plus env/org-admin breadth,
 /// exactly like the registered platform set.
 fn seed_storage_scope_mirror(engine: &sentin8_storage_server::policy::Engine, env_id: &uuid::Uuid) {
     use sentin8::shield::{PolicyMode, PolicyOrigin, PolicySetRecord};
-    // ONE set (UNIQUE key (env, service, policy_set_name) — separate upserts
+    // ONE set (UNIQUE key (env, service, policy_set_name) - separate upserts
     // with the same name would overwrite each other) containing ALL permits.
     let mut stmts: Vec<String> = Vec::new();
     for action in [
@@ -435,7 +435,7 @@ fn seed_storage_scope_mirror(engine: &sentin8_storage_server::policy::Engine, en
         .expect("seed storage scope-mirror set");
 }
 
-/// Persist the scope-mirror set row (`sys.policy_sets`) for the test env —
+/// Persist the scope-mirror set row (`sys.policy_sets`) for the test env -
 /// the durable half of [`seed_storage_scope_mirror`]. The engine's
 /// sync-reload-on-empty-coverage path replaces the whole in-memory cache
 /// from the DB, so a test-env set that exists only in memory is lost the
@@ -465,7 +465,7 @@ async fn seed_storage_scope_mirror_row(pool: &sqlx::PgPool, env_id: &uuid::Uuid)
         ));
     }
     // SECURITY DEFINER boot-read path (same function production loads
-    // through) — no tenant context is set in this fixture, so the direct
+    // through) - no tenant context is set in this fixture, so the direct
     // table insert must come from a role the function's owner can read
     // back; plain INSERT through the pooled dev role suffices.
     sqlx::query(
@@ -587,7 +587,7 @@ async fn read_scope_cannot_put() {
     assert_eq!(resp.status(), StatusCode::FORBIDDEN);
 }
 
-/// Write scope does NOT grant delete — admin scope required (§6).
+/// Write scope does NOT grant delete - admin scope required (§6).
 #[tokio::test]
 async fn write_scope_cannot_delete() {
     let Some((app, issuer, _tmp, env)) = spawn_app().await else {
@@ -614,7 +614,7 @@ async fn write_scope_cannot_delete() {
     assert_eq!(resp.status(), StatusCode::FORBIDDEN);
 }
 
-/// Write scope does NOT grant download — read scope required (§6).
+/// Write scope does NOT grant download - read scope required (§6).
 #[tokio::test]
 async fn write_scope_cannot_get() {
     let Some((app, issuer, _tmp, env)) = spawn_app().await else {
@@ -748,7 +748,7 @@ async fn signed_read_roundtrip_and_forgery() {
     let body: serde_json::Value = serde_json::from_str(&body_string(resp).await).unwrap();
     let url = body["url"].as_str().unwrap().to_string();
 
-    // GET the signed URL — serves the payload without auth.
+    // GET the signed URL - serves the payload without auth.
     let resp = app
         .clone()
         .oneshot(
@@ -1141,7 +1141,7 @@ async fn public_read_extension_filter() {
 
 // ── Adapter-level security (traversal, isolation) ────────────────────────
 
-/// PUT with traversal components must be rejected by the adapter — the
+/// PUT with traversal components must be rejected by the adapter - the
 /// file must never land outside the root (SEC-storage-2).
 #[tokio::test]
 async fn adapter_put_traversal_rejected() {

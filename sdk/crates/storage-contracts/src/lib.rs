@@ -5,7 +5,7 @@
 
 //! # storage-contracts
 //!
-//! Rust types for the Storage object-storage HTTP API — object metadata,
+//! Rust types for the Storage object-storage HTTP API - object metadata,
 //! list pagination, and signed-URL responses.
 
 #![deny(missing_docs)]
