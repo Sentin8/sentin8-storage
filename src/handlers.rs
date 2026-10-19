@@ -10,6 +10,8 @@
 //! from `env_id` via `sys.environments` for the storage key prefix
 //! (`org/{org_id}/env/{env_id}/...`) - it never appears in URL paths.
 
+use axum::Json;
+use sentin8::middleware::health::LiveHealth;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 
@@ -55,17 +57,19 @@ pub struct AppState {
     get,
     path = "/v1/health",
     responses(
-        (status = 200, description = "Liveness (version, build, disk usage)", body = serde_json::Value),
+        (status = 200, description = "Liveness (version, build, disk usage)", body = sentin8::middleware::health::LiveHealth),
     ),
     security(),
     tag = "meta",
 )]
-pub async fn health() -> axum::Json<serde_json::Value> {
-    let mut payload = serde_json::json!({"status": "ok", "version": sentin8::build_info::id(), "build": sentin8::build_info::build_hash()});
-    if let Some(n) = sentin8::middleware::traffic_counter::process_active_connections() {
-        payload["active_connections"] = serde_json::json!(n);
-    }
-    axum::Json(payload)
+pub async fn health() -> Json<LiveHealth> {
+    Json(LiveHealth {
+        status: "ok".to_string(),
+        service: None,
+        version: Some(sentin8::build_info::id()),
+        build: Some(sentin8::build_info::build_hash().to_string()),
+        active_connections: sentin8::middleware::traffic_counter::process_active_connections().map(|n| n as i64),
+    })
 }
 
 /// Resolve `org_id` from `env_id` via `sys.environments`. Fails closed:

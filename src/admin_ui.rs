@@ -120,7 +120,7 @@ fn resolve_env_id(
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
     responses(
-        (status = 200, description = "RFW page definition (rendered by Sentin8:Dash)", body = serde_json::Value),
+        (status = 200, description = "RFW page definition (rendered by Sentin8:Dash)", body = sentin8::rfw::AdminUiResponse),
         (status = 403, description = "Caller lacks a storage read/admin scope"),
         (status = 404, description = "Unknown page"),
     ),
@@ -132,7 +132,7 @@ pub async fn get_admin_ui(
     headers: HeaderMap,
     Path(page): Path<String>,
     Query(q): Query<TargetEnvQuery>,
-) -> Result<Json<serde_json::Value>, (axum::http::StatusCode, String)> {
+) -> Result<Json<AdminUiResponse>, (axum::http::StatusCode, String)> {
     let a = crate::auth::verify_token(&state.config, &headers).await?;
     a.require_any_scope(&[
         "sentin8:storage:env:read",
@@ -268,9 +268,7 @@ pub async fn get_admin_ui(
             .build(),
         _ => return Err((axum::http::StatusCode::NOT_FOUND, format!("Unknown admin UI page: {page}"))),
     };
-    Ok(Json(
-        serde_json::to_value(AdminUiResponse::page(def)).unwrap(),
-    ))
+    Ok(Json(AdminUiResponse::page(def)))
 }
 
 /// `GET /v1/admin/{resource}` - returns a JSON array of admin data rows.
@@ -282,7 +280,7 @@ pub async fn get_admin_ui(
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
     responses(
-        (status = 200, description = "The resource's rows for the RFW table", body = serde_json::Value),
+        (status = 200, description = "The resource's rows for the RFW table", body = sentin8::rfw::policy_pages::AdminDataRows),
         (status = 403, description = "Caller lacks a storage read/admin scope"),
         (status = 404, description = "Unknown resource"),
     ),
@@ -368,7 +366,7 @@ pub async fn get_admin_data(
     path = "/v1/admin/buckets",
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
     responses(
-        (status = 200, description = "Bucket names + object counts", body = serde_json::Value),
+        (status = 200, description = "Bucket names + object counts", body = sentin8::rfw::policy_pages::AdminDataRows),
     ),
     security(("sentin8:storage:read" = [])),
     tag = "admin-ui",
@@ -427,7 +425,7 @@ pub struct BucketObjectsQuery {
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
     responses(
-        (status = 200, description = "Objects in the bucket", body = serde_json::Value),
+        (status = 200, description = "Objects in the bucket", body = sentin8::rfw::policy_pages::AdminDataRows),
         (status = 404, description = "Unknown bucket"),
     ),
     security(("sentin8:storage:read" = [])),
@@ -466,7 +464,7 @@ pub async fn list_bucket_objects(
     Ok(Json(serde_json::Value::Array(rows)))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// Request body for uploadfile.
 pub struct UploadFileRequest {
     /// The bucket.
@@ -483,9 +481,9 @@ pub struct UploadFileRequest {
     post,
     path = "/v1/admin/buckets/upload",
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
-    request_body = serde_json::Value,
+    request_body = UploadFileRequest,
     responses(
-        (status = 200, description = "File stored (multipart or JSON body per the RFW form)", body = serde_json::Value),
+        (status = 200, description = "File stored (multipart or JSON body per the RFW form)", body = sentin8::rfw::policy_pages::AdminRedirectAck),
     ),
     security(("sentin8:storage:write" = [])),
     tag = "admin-ui",
@@ -535,7 +533,7 @@ pub async fn upload_file(
     ))))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// Request body for createbucket.
 pub struct CreateBucketRequest {
     /// The name.
@@ -549,9 +547,9 @@ pub struct CreateBucketRequest {
     post,
     path = "/v1/admin/buckets",
     params(("target_env_id" = String, Query, description = "Target env (RLS context)")),
-    request_body = serde_json::Value,
+    request_body = CreateBucketRequest,
     responses(
-        (status = 200, description = "Bucket created (.keep marker written)", body = serde_json::Value),
+        (status = 200, description = "Bucket created (.keep marker written)", body = sentin8::rfw::policy_pages::AdminRedirectAck),
     ),
     security(("sentin8:storage:write" = [])),
     tag = "admin-ui",
@@ -603,7 +601,7 @@ pub async fn create_bucket(
     Ok(Json(AdminUiResponse::redirect("buckets")))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// Request body for deletebucket.
 pub struct DeleteBucketRequest {
     /// Identifier.
@@ -620,7 +618,7 @@ pub struct DeleteBucketRequest {
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
     responses(
-        (status = 200, description = "Bucket deleted with all objects", body = serde_json::Value),
+        (status = 200, description = "Bucket deleted with all objects", body = sentin8::rfw::policy_pages::AdminRedirectAck),
         (status = 404, description = "Unknown bucket"),
     ),
     security(("sentin8:storage:write" = [])),
@@ -650,7 +648,7 @@ pub async fn delete_bucket(
     Ok(Json(AdminUiResponse::redirect("buckets")))
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 /// Request body for deleteobject.
 pub struct DeleteObjectRequest {
     /// The object.
@@ -668,7 +666,7 @@ pub struct DeleteObjectRequest {
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
     responses(
-        (status = 200, description = "Object deleted", body = serde_json::Value),
+        (status = 200, description = "Object deleted", body = AdminUiResponse),
         (status = 404, description = "Unknown bucket or object"),
     ),
     security(("sentin8:storage:write" = [])),
@@ -756,6 +754,19 @@ pub async fn download_object(
 
 #[derive(Deserialize)]
 /// Request body for generatelink.
+/// The signed-read-URL reply.
+#[derive(Debug, serde::Serialize, utoipa::ToSchema)]
+pub struct GenerateLinkResponse {
+    /// The signed read URL (expiring token embedded).
+    pub url: String,
+    /// The URL's lifetime in seconds.
+    pub expires_in: i32,
+    /// The method the URL answers.
+    pub method: String,
+}
+
+#[derive(Debug, serde::Deserialize, utoipa::ToSchema)]
+/// The body of the link request.
 pub struct GenerateLinkRequest {
     /// The object.
     pub object: String,
@@ -770,9 +781,9 @@ pub struct GenerateLinkRequest {
         ("id" = String, Path, description = "Bucket name"),
         ("target_env_id" = String, Query, description = "Target env (RLS context)")
     ),
-    request_body = serde_json::Value,
+    request_body = GenerateLinkRequest,
     responses(
-        (status = 200, description = "Signed read URL for the object", body = serde_json::Value),
+        (status = 200, description = "Signed read URL for the object", body = GenerateLinkResponse),
         (status = 404, description = "Unknown bucket or object"),
     ),
     security(("sentin8:storage:write" = [])),
@@ -785,7 +796,7 @@ pub async fn generate_link(
     Query(q): Query<TargetEnvQuery>,
     Path(bucket_id): Path<String>,
     Json(req): Json<GenerateLinkRequest>,
-) -> Result<Json<serde_json::Value>, (axum::http::StatusCode, String)> {
+) -> Result<Json<GenerateLinkResponse>, (axum::http::StatusCode, String)> {
     let a = crate::auth::verify_token(&state.config, &headers).await?;
     a.require_any_scope(&[
         "sentin8:storage:env:read",
@@ -802,11 +813,11 @@ pub async fn generate_link(
         .signed_codec
         .issue(&key, 3600, crate::storage::SignedMethod::Get);
 
-    Ok(Json(serde_json::json!({
-        "url": format!("/v1/storage/signed/{token}"),
-        "expires_in": 3600,
-        "method": "GET",
-    })))
+    Ok(Json(GenerateLinkResponse {
+        url: format!("/v1/storage/signed/{token}"),
+        expires_in: 3600,
+        method: "GET".to_string(),
+    }))
 }
 #[allow(dead_code)]
 fn col(key: &str, label: &str) -> WidgetDataTableColumn {
