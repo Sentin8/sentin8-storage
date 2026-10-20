@@ -62,4 +62,5 @@ use crate::handlers;
         (name = "policy", description = "Shield policy administration (shared surface)"),
         (name = "storage", description = "Sentin8:Storage admin API - object CRUD, signed URLs"),
     ),
-)]pub struct StorageOpenApi;
+)]
+pub struct StorageOpenApi;
