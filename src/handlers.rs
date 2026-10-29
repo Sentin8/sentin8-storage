@@ -38,7 +38,7 @@ pub struct AppState {
     /// HMAC codec for signed URL tokens.
     /// The signed codec.
     pub signed_codec: Arc<SignedUrlCodec>,
-    /// Shield engine ( - ): additional gate after scope.
+    /// Shield engine : additional gate after scope.
     /// The policy.
     pub policy: Arc<crate::policy::Engine>,
     /// Shared Sentin8:Policy admin surface ( - one

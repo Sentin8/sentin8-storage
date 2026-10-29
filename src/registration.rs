@@ -21,7 +21,7 @@ const PG_ROLES: &[PgRole] = &[PgRole {
     bypass_rls: false,
     database: "sentin8",
     // Tenant-key resolution for the storage key prefix reads the platform
-    // org/env rows (SELECT-only, schema-qualified in SQL - ).
+    // org/env rows (SELECT-only, schema-qualified in SQL).
     cross_schema_grants: &[CrossSchemaGrant {
         schema: "sys",
         table: "environments",
@@ -141,7 +141,7 @@ const M2M_GRANTS: &[sentin8::registration::M2mGrant] = &[
         workload: "storage-policy",
         scopes: &["sentin8:bus:consume", "sentin8:stat:measure"],
     },
-    // TLS-RLS-4 (design/sentin8-vertical-data-plane-contract.md §VDC.7): the database-free HostContextResolver’s resolve workload - cache miss calls Sys `GET /v1/resolve/hostname`.
+    // (design/sentin8-vertical-data-plane-contract.md §VDC.7): the database-free HostContextResolver’s resolve workload - cache miss calls Sys `GET /v1/resolve/hostname`.
     sentin8::registration::M2mGrant {
         workload: "sentin8-storage-tls",
         scopes: &["sentin8:sys:instances:read"],
