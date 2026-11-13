@@ -4352,7 +4352,7 @@ dependencies = [
 
 [[package]]
 name = "sentin8-storage"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -4384,7 +4384,7 @@ dependencies = [
 
 [[package]]
 name = "sentin8-storage-client"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "reqwest 0.12.28",
  "sentin8-m2m",
@@ -4400,7 +4400,7 @@ dependencies = [
 
 [[package]]
 name = "sentin8-storage-contracts"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "serde",
@@ -4410,7 +4410,7 @@ dependencies = [
 
 [[package]]
 name = "sentin8-storage-sdk"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "sentin8-storage-client",
  "sentin8-storage-contracts",
